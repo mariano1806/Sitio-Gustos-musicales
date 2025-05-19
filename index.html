@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mis Gustos Musicales</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+      }
+      .band-rating {
+        margin: 10px 0;
+      }
+      button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 16px;
+      }
+      #resultado {
+        margin-top: 30px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Calificá estas bandas (1 a 10)</h1>
+
+    <div id="bandas"></div>
+    <button onclick="procesar()">Procesar Información</button>
+    <div id="resultado"></div>
+
+    <script>
+      const bandas = [
+        'Nirvana',
+        'Nine Inch Nails',
+        'Backstreet Boys',
+        'N Sync',
+        'Night Club',
+        'Apashe',
+        'STP'
+      ]
+
+      const features = [
+        'Grunge',
+        'Rock',
+        'Industrial',
+        'Boy Band',
+        'Dance',
+        'Techno'
+      ]
+
+      // Matriz oculta de géneros por banda (7x6)
+      const band_feats = tf.tensor([
+        [1, 1, 0, 0, 0, 0],
+        [1, 0, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 0],
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 1, 0, 0, 1],
+        [0, 0, 1, 0, 0, 1],
+        [1, 1, 0, 0, 0, 0],
+      ])
+
+      // Crear inputs para cada banda
+      const contenedor = document.getElementById('bandas')
+      bandas.forEach((banda, i) => {
+        const div = document.createElement('div')
+        div.className = 'band-rating'
+        div.innerHTML = `
+          <label>${banda}: </label>
+          <input type="number" id="b${i}" min="1" max="10" value="5"/>
+        `
+        contenedor.appendChild(div)
+      })
+
+      function procesar() {
+        // Obtener las puntuaciones del usuario
+        const votos = []
+        for (let i = 0; i < bandas.length; i++) {
+          const val = parseInt(document.getElementById(`b${i}`).value)
+          votos.push(val)
+        }
+
+        // Crear tensor (1x7)
+        const user_votes = tf.tensor([votos])
+
+        // Multiplicación matricial: (1x7) x (7x6) = (1x6)
+        const user_feats = tf.matMul(user_votes, band_feats)
+
+        // Ordenar los géneros
+        const top_user_features = tf.topk(user_feats, features.length)
+        const top_genres = top_user_features.indices.arraySync()[0]
+
+        // Mostrar resultado
+        const ranking = top_genres.map(i => features[i])
+        document.getElementById('resultado').innerHTML =
+          'Tu ranking de géneros es:<br><ul>' +
+          ranking.map(r => `<li>${r}</li>`).join('') + '</ul>'
+      }
+    </script>
+  </body>
+</html>
